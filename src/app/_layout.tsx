@@ -1,18 +1,67 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { ThemeContextProvider, useAppTheme } from '@/context/ThemeContext';
+import { AppContextProvider, useApp } from '@/context/AppContext';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+// Ngăn splash screen tự động ẩn trước khi nạp xong dữ liệu
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
-SplashScreen.preventAutoHideAsync();
+function RootNavigation() {
+  const { isDark, colors } = useAppTheme();
+  const { isLoading } = useApp();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading]);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: colors.card,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+          },
+          contentStyle: {
+            backgroundColor: colors.background,
+          },
+        }}>
+        {/* Nhóm Tabs chính chứa Home, Activities, Profile, Settings */}
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        {/* Màn hình thứ 5: Edit Profile (dạng Modal hoặc Stack) (R02, R04) */}
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            presentation: 'modal',
+            title: 'Chỉnh sửa hồ sơ',
+            headerBackTitle: 'Hủy',
+          }}
+        />
+      </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeContextProvider>
+      <AppContextProvider>
+        <RootNavigation />
+      </AppContextProvider>
+    </ThemeContextProvider>
   );
 }
